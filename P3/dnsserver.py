@@ -10,6 +10,7 @@ Testing Environment:
 
 import sys
 import socket
+import struct
 
 serverIP = sys.argv[1]
 serverPort = int(sys.argv[2])
@@ -24,26 +25,47 @@ test = False
 print("The server is ready to receive on port:  " + str(serverPort) + "\n")
 
 while True:
-    sendLine = " "
-    line = " "
     data, address = serverSocket.recvfrom(1024)
+    dat1 = str(struct.unpack('hhihh', data[0:12])) #slice up to 12 bytes
+
+    dat = []
     
-    values = data.decode()
-    message = values.rstrip().split()
+    for i in dat1:
+        if i.isdigit():
+            dat.append(int(i))
+
+    question = data[12:].decode()
+    qSplit = question.split()
     
+
     for line in file:
         li=line.strip()
         if not li.startswith("#"):
             words = line.rstrip().split()
             if words:
-                if words[0] == message[0]:
+                if words[0] == qSplit[0]:
                     sendLine = line
                     test = True
                     break
-           
+    
+    answerLength = len((line.encode('utf-8')))
+
+    val1 = str(dat[2]) + str(dat[3])
+    val2 = str(dat[4]) + str(dat[5])
+    
+
     if test:
-        returnMessage = "0" + " " + sendLine
-        serverSocket.sendto(returnMessage.encode(),address)
+        codedData = question.encode()
+        theData = struct.pack('hhihh',2, 0, int(val1), int(val2), answerLength)
+        questionData = question.encode()
+        answerData = sendLine.encode()
+        returnMessage = theData + questionData + answerData
+        serverSocket.sendto(returnMessage,address)
     else:
-        returnMessage = "1"
-        serverSocket.sendto(returnMessage.encode(),address)
+        codedData = question.encode()
+        theData = struct.pack('hhihh',2, 1, int(val1), int(val2), answerLength)
+        questionData = question.encode()
+        answerData = "".encode()
+        returnMessage = theData + questionData + answerData
+        serverSocket.sendto(returnMessage,address)
+    

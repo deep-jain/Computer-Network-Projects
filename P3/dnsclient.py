@@ -10,13 +10,14 @@ Testing Environment:
 import sys
 import socket
 import random
+import struct
 
 ip = sys.argv[1]
 port = int(sys.argv[2])
 hostName = sys.argv[3]
 
 question = hostName + " A IN"
-questionLength = len((question.encode('utf-8')))
+questionLength = len((question.encode('utf-8')))        
 
 messageID = random.randint(1,100)
 # one more
@@ -34,38 +35,50 @@ print("Message ID: " + str(messageID))
 print("Question Length: " + str(questionLength) + " bytes")
 print("Answer Length: " + str(0))
 print("Question: " + question)
-        
-print()
+
+codedData = question.encode()
+theData = struct.pack('hhihh',1, 0, messageID, questionLength, 0)
+
+value = theData + codedData
+
+print("Sending Request to " + str(ip) + ", " + str(port) + ":")    
 
 for i in range(3):
     try:
-        print("Sending Request to " + str(ip) + ", " + str(port) + ":")
-        clientsocket.sendto(sendData.encode(),(ip, port))
-        dataEcho, address = clientsocket.recvfrom(100)
+        clientsocket.sendto(value,(ip, port))
+        data, address = clientsocket.recvfrom(100)
         print("Received Response from " + str(ip) + ", " + str(port))
-        returnMessage = dataEcho.decode().rstrip().split()
+        dat1 = str(struct.unpack('hhihh', data[0:12]))
         
-        if returnMessage[0] == "0":
-            answer = returnMessage[1] + " " + returnMessage[2] + " " +returnMessage[3] + " " + returnMessage[4] + " " + returnMessage[5]
-            answerLength = len((answer.encode('utf-8')))
+        dats = []
+
+        for i in dat1:
+            if i.isdigit():
+                dats.append(int(i))
+
+        end = 12 + questionLength
+        
+        answer = data[end:].decode()
+
+        if dats[1] == 0:
             print("Return Code: 0 (No errors)")
-            print("Message ID: " + str(messageID))
+            print("Message ID: " + str(dats[2]) + str(dats[3]))
             print("Question Length: " + str(questionLength) + " bytes")
-            print("Answer Length: " + str(answerLength) + " bytes")
+            print("Answer Length: " + str(dats[6]) + str(dats[7]) + " bytes")
             print("Question: " + question)
-            print("Answer: " + answer) #Answer being compiled at beggining of if
-        elif returnMessage[0] == "1": 
+            print("Answer: " + answer)
+        elif dats[1] == 1: 
             print("Return Code: 1 (Name does not exist)")
             print("Question Length: " + str(questionLength) + " bytes")
             print("Answer Length: 0 bytes")
             print("Question: " + question)
-
         break
     except:
         if i == 2:
             print("Request timed out ... Exiting Program")
         else:
             print("Request timed out ...")
+            print("Sending Request to " + str(ip) + ", " + str(port) + ":")
 
 #Close the client socket
 clientsocket.close()
