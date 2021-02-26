@@ -1,4 +1,3 @@
-# Example Master File for DNS Programming Assignment
 # dns-master.txt
 # Domain student.test
 
