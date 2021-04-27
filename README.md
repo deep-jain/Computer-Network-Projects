@@ -5,4 +5,3 @@
     * [P2](https://github.com/deep-jain/Computer-Network-Projects/tree/main/P2)
 3. Project 3: A DNS simulator with a sample txt file of hosts
     * [P3](https://github.com/deep-jain/Computer-Network-Projects/tree/main/P3)
-4. Project 4:
